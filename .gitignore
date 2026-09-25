@@ -1,14 +1,123 @@
-# A fast, small, safe, gradually typed embeddable scripting language derived from Lua
-#
-# https://github.com/luau-lang/luau
-# https://luau.org/
+-- Шаблон UI для Luarmor
+-- Правый Shift — скрыть/показать интерфейс
 
-# Code coverage
-coverage.out
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
-# Profiling
-profile.out
-profile.svg
+-- 1. Создаём ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "LuarmorUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
 
-# Time trace
-trace.json
+-- 2. Главное окно
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 400, 0, 300)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true -- можно перетаскивать
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+-- Закругление углов
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 12)
+uiCorner.Parent = mainFrame
+
+-- 3. Заголовок
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 50)
+title.BackgroundTransparency = 1
+title.Text = "Панель анимаций"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 22
+title.Font = Enum.Font.GothamBold
+title.Parent = mainFrame
+
+-- 4. Поле ввода (ID анимации)
+local idInput = Instance.new("TextBox")
+idInput.Size = UDim2.new(0.7, 0, 0, 40)
+idInput.Position = UDim2.new(0.15, 0, 0, 70)
+idInput.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+idInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+idInput.PlaceholderText = "Введи ID анимации..."
+idInput.Text = ""
+idInput.Font = Enum.Font.Gotham
+idInput.TextSize = 16
+idInput.Parent = mainFrame
+
+local inputCorner = Instance.new("UICorner")
+inputCorner.CornerRadius = UDim.new(0, 6)
+inputCorner.Parent = idInput
+
+-- 5. Кнопка воспроизведения
+local playButton = Instance.new("TextButton")
+playButton.Size = UDim2.new(0.7, 0, 0, 40)
+playButton.Position = UDim2.new(0.15, 0, 0, 130)
+playButton.BackgroundColor3 = Color3.fromRGB(80, 120, 200)
+playButton.Text = "Воспроизвести"
+playButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+playButton.Font = Enum.Font.GothamBold
+playButton.TextSize = 18
+playButton.Parent = mainFrame
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 6)
+btnCorner.Parent = playButton
+
+-- 6. Подсказка
+local hint = Instance.new("TextLabel")
+hint.Size = UDim2.new(1, 0, 0, 30)
+hint.Position = UDim2.new(0, 0, 0, 250)
+hint.BackgroundTransparency = 1
+hint.Text = "Нажми [Правый Shift] чтобы скрыть/показать"
+hint.TextColor3 = Color3.fromRGB(150, 150, 150)
+hint.TextSize = 14
+hint.Font = Enum.Font.Gotham
+hint.Parent = mainFrame
+
+-- 7. Функция воспроизведения анимации
+local function playAnimation(animId)
+    local character = player.Character
+    if not character then return end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+
+    -- Для R15 лучше использовать Animator
+    local animator = humanoid:FindFirstChildOfClass("Animator")
+
+    local animation = Instance.new("Animation")
+    animation.AnimationId = "rbxassetid://" .. animId
+
+    local animTrack
+    if animator then
+        animTrack = animator:LoadAnimation(animation)
+    else
+        animTrack = humanoid:LoadAnimation(animation)
+    end
+
+    animTrack:Play()
+end
+
+-- 8. Обработка нажатия кнопки
+playButton.MouseButton1Click:Connect(function()
+    local id = idInput.Text
+    if id and id ~= "" then
+        -- Убираем префикс, если он есть
+        id = id:gsub("rbxassetid://", "")
+        playAnimation(id)
+    end
+end)
+
+-- 9. Переключение по правому Shift
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        mainFrame.Visible = not mainFrame.Visible
+    end
+end)
